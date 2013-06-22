@@ -11,6 +11,8 @@
 		  , db = require('mongoose');
 
 		var app = express();
+		var stock_details;
+		var results;
 
 		// all environments
 		app.set('port', process.env.PORT || 3000);
@@ -32,9 +34,9 @@
 		// set up db connection
 		var Inventory;
 		var mongo_connection = db.connect("mongodb://localhost/test");
-		var connection_string = db.connection;
-		connection_string.on('error', console.error.bind(console, "Couldn't establish DB connection"));
-		connection_string.once('open',function callback() {
+		var connectionString = db.connection;
+		connectionString.on('error', console.error.bind(console, "Couldn't establish DB connection"));
+		connectionString.once('open',function callback() {
 			    console.log("Established connection");
 			    var inventorySchema =  {
 				name          : String,
@@ -42,42 +44,43 @@
 				barcode       : String,
 				project       : String
 				};
-				Inventory = connection.model('Inventory', inventorySchema);
-		});	
+				Inventory = connectionString.model('Inventory', inventorySchema);
 
-		// Create an inventory record	
-		var mouse =  new Inventory({name: "mouse", company: "Genius", barcode: "132-str-xxx", project: "Gruppo-PAM"});
-		mouse.save(function(){
+		   // Create an inventory record	
+		   var mouse =  new Inventory({name: "mouse", company: "Genius", barcode: "132-str-xxx", project: "Gruppo-PAM"});
+		   mouse.save(function(){
 		   console.log("Successfully created the stock" + mouse);
-		});
+		   });
+            
+            //Get Inventory
+		    stock_details = Inventory.find({}, function(error, stocks) {
+		    results = "";	
+	    	if(error) {
+	    		results = error;
+	    	}
+
+	    	else if(stocks == null) {
+	    		results = "No Inventory Details Available";
+	    	}
+
+	    	else {
+	    		results = stocks;
+	    	}
+	        });
+
+
+		});	
 
 		app.get('/', routes.index);
 		app.get('/users', user.list);
 
-	    //Get Inventory
-	    var stock_details = Inventory.find({}, function(error, stocks) {
-	    	if(error) {
-	    		response.json(error);
-	    	}
-
-	    	else if(stock == null) {
-	    		response.json("No Inventory Details Available");
-	    	}
-
-	    	else {
-	    		response.json(stocks)
-	    	}
-	    });
 	    
 	    // Display inventory 
 		app.get('/stock', function(request, response){
-			var reponse_content = stock_details();
-		    response.writeHead(200, {"Content-Type}" : "text/json"});
-			response.end("HELLO WORLD ," + reponse_content + " Welcome to the new World!" );
+		    response.writeHead(200, {"Content-Type}" : "text/plain"});
+			response.end("RESULT ============================== " + results);
 		});
-
-		connection_string.close();
-
-		http.createServer(app).listen(app.get('port'), function(){
-		  console.log('Express server listening on port ' + app.get('port'));
+ 
+    	http.createServer(app).listen(app.get('port'), function(){
+		console.log('Express server listening on port ' + app.get('port'));
 		});
